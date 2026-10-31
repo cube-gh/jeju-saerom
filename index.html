@@ -371,6 +371,8 @@ const ICONS = {
   "X": "<path d=\"M18 6 6 18\"></path><path d=\"m6 6 12 12\"></path>",
   "CalendarX": "<rect width=\"18\" height=\"18\" x=\"3\" y=\"4\" rx=\"2\" ry=\"2\"></rect><line x1=\"16\" x2=\"16\" y1=\"2\" y2=\"6\"></line><line x1=\"8\" x2=\"8\" y1=\"2\" y2=\"6\"></line><line x1=\"3\" x2=\"21\" y1=\"10\" y2=\"10\"></line><line x1=\"10\" x2=\"14\" y1=\"14\" y2=\"18\"></line><line x1=\"14\" x2=\"10\" y1=\"14\" y2=\"18\"></line>",
   "ChevronDown": "<path d=\"m6 9 6 6 6-6\"></path>",
+  "Plane": "<path d=\"M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z\"></path>",
+  "Flag": "<path d=\"M4 15s1-1 4-1 5 2 8 2 4-1 4-1V3s-1 1-4 1-5-2-8-2-4 1-4 1z\"></path><line x1=\"4\" x2=\"4\" y1=\"22\" y2=\"15\"></line>",
   "Printer": "<path d=\"M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2\"></path><path d=\"M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6\"></path><rect x=\"6\" y=\"14\" width=\"12\" height=\"8\" rx=\"1\"></rect>",
   "Pencil": "<path d=\"M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z\"></path><path d=\"m15 5 4 4\"></path>",
   "Phone": "<path d=\"M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z\"></path>",
@@ -730,6 +732,7 @@ async function firstSetup({
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
 const total = e => (+e.adult || 0) + (+e.child || 0) + (+e.infant || 0);
 const hhmm = d => `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+const VEHICLES = ["45인승 대형버스", "31인승 리무진", "24인승 미니버스", "16인승 솔라티", "승합차", "택시", "렌트카"];
 const CATEGORIES = ["일반", "학단", "골프", "등반", "세미나", "렌트카", "항공", "숙박", "차량", "자유"];
 const EMPTY = () => ({
   id: "",
@@ -744,6 +747,11 @@ const EMPTY = () => ({
   adult: 0,
   child: 0,
   infant: 0,
+  flightNo: "",
+  arriveTime: "",
+  outTime: "",
+  guideName: "",
+  guidePhone: "",
   hotelName: "",
   occupancy: "",
   roomType: "",
@@ -766,7 +774,7 @@ function printEvent(ev) {
   const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", ev.agency], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
-    ["행사 대표", leader], ["인원", pax], ["숙소", hotel], ["차량", car], ["기사님", driver], ["기타 사항", ev.memo]].filter(r => r[1]);
+    ["행사 대표", leader], ["인원", pax], ["항공", [ev.flightNo, ev.arriveTime && `도착 ${ev.arriveTime}`, ev.outTime && `아웃 ${ev.outTime}`].filter(Boolean).join(" · ")], ["숙소", hotel], ["가이드", [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ")], ["차량", car], ["기사님", driver], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
     <h1>${escH(ev.title)}<span class="st">${escH(STATUS[ev.status].label)}</span></h1>
@@ -849,7 +857,11 @@ function EventCard({
     icon: "Users"
   }, "\uC131\uC778 ", ev.adult || 0, +ev.child ? ` · 아동 ${ev.child}` : "", +ev.infant ? ` · 유아 ${ev.infant}` : "", " ", /*#__PURE__*/React.createElement("b", {
     className: "text-slate-900"
-  }, "/ \uCD1D ", total(ev), "\uBA85")), /*#__PURE__*/React.createElement(Row, {
+  }, "/ \uCD1D ", total(ev), "\uBA85")), (ev.flightNo || ev.arriveTime || ev.outTime) && /*#__PURE__*/React.createElement(Row, {
+    icon: "Plane"
+  }, ev.flightNo && /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, ev.flightNo, " "), ev.arriveTime && `도착 ${ev.arriveTime}`, ev.arriveTime && ev.outTime ? " · " : "", ev.outTime && `아웃 ${ev.outTime}`), /*#__PURE__*/React.createElement(Row, {
     icon: "BedDouble"
   }, ev.hotelName ? /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
@@ -857,7 +869,20 @@ function EventCard({
     className: "text-slate-500"
   }, " \xB7 ", ev.occupancy), ev.roomType && /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, " \xB7 ", ev.roomType)), /*#__PURE__*/React.createElement("div", {
+  }, " \xB7 ", ev.roomType)), (ev.guideName || ev.guidePhone) && /*#__PURE__*/React.createElement(Row, {
+    icon: "Flag"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500"
+  }, "\uAC00\uC774\uB4DC "), ev.guideName && /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, ev.guideName), ev.guidePhone && /*#__PURE__*/React.createElement("a", {
+    href: `tel:${ev.guidePhone}`,
+    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold",
+    style: { marginLeft: 6 }
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Phone",
+    size: 12
+  }), ev.guidePhone)), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start gap-2 min-w-0"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-400 shrink-0 mt-0.5"
@@ -1391,6 +1416,30 @@ function EventForm({
     value: +f[k] || 0,
     onChange: v => set(k, v)
   }))))), /*#__PURE__*/React.createElement(Group, {
+    title: "\uD56D\uACF5\uC2DC\uAC04"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "\uD56D\uACF5\uD3B8"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: inp,
+    value: f.flightNo || "",
+    onChange: e => set("flightNo", e.target.value), placeholder: "\uC608: KE1201"
+  })), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "\uB3C4\uCC29\uC2DC\uAC04"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    className: inp,
+    value: f.arriveTime || "",
+    onChange: e => set("arriveTime", e.target.value)
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "\uD56D\uACF5\uD3B8 \uC544\uC6C3\uC2DC\uAC04"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "time",
+    className: inp,
+    value: f.outTime || "",
+    onChange: e => set("outTime", e.target.value)
+  })))), /*#__PURE__*/React.createElement(Group, {
     title: "\uC219\uC18C"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[1fr_96px] gap-2"
@@ -1431,6 +1480,24 @@ function EventForm({
     value: f.rooms,
     onChange: e => set("rooms", e.target.value)
   })))), /*#__PURE__*/React.createElement(Group, {
+    title: "\uAC00\uC774\uB4DC"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Field, {
+    label: "\uAC00\uC774\uB4DC \uC774\uB984"
+  }, /*#__PURE__*/React.createElement("input", {
+    className: inp,
+    value: f.guideName || "",
+    onChange: e => set("guideName", e.target.value), placeholder: "\uC131\uBA85"
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "\uC804\uD654\uBC88\uD638"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "tel",
+    inputMode: "tel",
+    className: inp,
+    value: f.guidePhone || "",
+    onChange: e => set("guidePhone", e.target.value), placeholder: "010-0000-0000"
+  })))), /*#__PURE__*/React.createElement(Group, {
     title: "\uCC28\uB7C9"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[1fr_96px] gap-2"
@@ -1440,8 +1507,7 @@ function EventForm({
     className: inp,
     value: f.vehicleType,
     onChange: e => set("vehicleType", e.target.value),
-    placeholder: "\uC608: 45\uC778\uC2B9 \uB300\uD615\uBC84\uC2A4",
-    list: "vtypes"
+    placeholder: "\uC544\uB798\uC5D0\uC11C \uC120\uD0DD \uB610\uB294 \uC9C1\uC811 \uC785\uB825"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uB300\uC218"
   }, /*#__PURE__*/React.createElement("input", {
@@ -1451,14 +1517,21 @@ function EventForm({
     className: inp,
     value: f.vehicleCount,
     onChange: e => set("vehicleCount", e.target.value)
-  }))), /*#__PURE__*/React.createElement("datalist", {
+  }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-wrap gap-1.5"
+  }, VEHICLES.map(v => /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    key: v,
+    onClick: () => set("vehicleType", f.vehicleType === v ? "" : v),
+    className: `h-9 px-3 rounded-lg text-[13px] font-semibold ring-1 transition ${f.vehicleType === v ? "bg-blue-600 text-white ring-blue-600" : "bg-white text-slate-600 ring-slate-200 active:bg-slate-100"}`
+  }, v))), /*#__PURE__*/React.createElement("datalist", {
     id: "agencies"
   }, agencies.map(a => /*#__PURE__*/React.createElement("option", {
     key: a,
     value: a
   }))), /*#__PURE__*/React.createElement("datalist", {
     id: "vtypes"
-  }, ["45인승 대형버스", "31인승 리무진", "24인승 미니버스", "16인승 솔라티", "승합차", "택시", "렌트카"].map(v => /*#__PURE__*/React.createElement("option", {
+  }, VEHICLES.map(v => /*#__PURE__*/React.createElement("option", {
     key: v,
     value: v
   }))), /*#__PURE__*/React.createElement("div", {
@@ -1746,7 +1819,7 @@ function App() {
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return events;
-    return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.plate, e.driverName, e.memo].join(" ").toLowerCase().includes(k));
+    return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.flightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.plate, e.driverName, e.memo].join(" ").toLowerCase().includes(k));
   }, [events, q]);
   const todayEvs = events.filter(e => inDay(e, TODAY) && e.status !== "cancelled");
   const pax = todayEvs.reduce((s, e) => s + total(e), 0);
