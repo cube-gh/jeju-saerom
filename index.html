@@ -764,6 +764,19 @@ const EMPTY = () => ({
   memo: ""
 });
 
+/* ---------- 현재 날짜·시간 ---------- */
+function Clock() {
+  const [now, setNow] = useState(new Date());
+  useEffect(() => {
+    const t = setInterval(() => setNow(new Date()), 15000);
+    return () => clearInterval(t);
+  }, []);
+  return /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-slate-500",
+    style: { paddingBottom: 3, lineHeight: 1.2 }
+  }, `${now.getMonth() + 1}.${now.getDate()}(${WD[now.getDay()]})`, /*#__PURE__*/React.createElement("br", null), `${pad(now.getHours())}:${pad(now.getMinutes())}`);
+}
+
 /* ---------- 카드 인쇄 ---------- */
 const escH = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
 function printEvent(ev) {
@@ -1876,32 +1889,39 @@ function App() {
     "aria-label": "\uC624\uB298\uB85C"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xs font-bold tracking-wide text-amber-600"
-  }, "(\uC8FC)\uC81C\uC8FC\uC0C8\uB86C\uC5EC\uD589\uC0AC"), /*#__PURE__*/React.createElement("h1", {
-    className: "brand-title text-2xl font-bold text-blue-700"
-  }, "\uD589\uC0AC \uCE98\uB9B0\uB354")), /*#__PURE__*/React.createElement("div", {
+  }, "(\uC8FC)\uC81C\uC8FC\uC0C8\uB86C\uC5EC\uD589\uC0AC"), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-end gap-1.5"
+  }, /*#__PURE__*/React.createElement("h1", {
+    className: "brand-title text-2xl font-bold text-blue-700",
+    style: { whiteSpace: "nowrap" }
+  }, "\uD589\uC0AC \uCE98\uB9B0\uB354"), /*#__PURE__*/React.createElement(Clock, null))), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-1.5"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAdmin(true),
-    className: `h-11 px-2.5 rounded-xl flex items-center justify-center gap-1 ring-1 text-sm font-semibold ${canEdit ? "bg-amber-100 ring-amber-200 text-amber-700" : "bg-white ring-slate-200 text-slate-700"}`
+    className: `h-11 px-2.5 rounded-xl flex items-center justify-center gap-1 ring-1 text-sm font-semibold whitespace-nowrap ${canEdit ? "bg-amber-100 ring-amber-200 text-amber-700" : "bg-white ring-slate-200 text-slate-700"}`
   }, /*#__PURE__*/React.createElement(Icon, {
     name: canEdit ? "Unlock" : "Lock",
     size: 15
   }), canEdit ? "관리중" : "관리자"), /*#__PURE__*/React.createElement("button", {
     onClick: () => setDark(!dark),
-    className: "h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 ring-1 text-sm font-semibold bg-white ring-slate-200 text-slate-700"
+    className: "h-11 rounded-xl flex items-center justify-center ring-1 bg-white ring-slate-200 text-slate-700",
+    style: { width: 44 },
+    "aria-label": dark ? "라이트 모드" : "다크 모드"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: dark ? "Sun" : "Moon",
-    size: 16
-  }), dark ? "라이트" : "다크"), /*#__PURE__*/React.createElement("button", {
+    size: 18
+  })), /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setShowSearch(!showSearch);
       if (showSearch) setQ("");
     },
-    className: `h-11 px-2.5 rounded-xl flex items-center justify-center gap-1.5 ring-1 text-sm font-semibold ${showSearch || q ? "bg-blue-600 text-white ring-blue-600" : "bg-white ring-slate-200 text-slate-700"}`
+    className: `h-11 rounded-xl flex items-center justify-center ring-1 ${showSearch || q ? "bg-blue-600 text-white ring-blue-600" : "bg-white ring-slate-200 text-slate-700"}`,
+    style: { width: 44 },
+    "aria-label": showSearch ? "검색 닫기" : "검색"
   }, /*#__PURE__*/React.createElement(Icon, {
     name: showSearch ? "X" : "Search",
-    size: 16
-  }), showSearch ? "닫기" : "검색"))), showSearch && /*#__PURE__*/React.createElement("div", {
+    size: 18
+  })))), showSearch && /*#__PURE__*/React.createElement("div", {
     className: "mt-3 relative"
   }, /*#__PURE__*/React.createElement("span", {
     className: "absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
