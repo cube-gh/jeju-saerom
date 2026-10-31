@@ -774,7 +774,7 @@ function printEvent(ev) {
   const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", ev.agency], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
-    ["행사 대표", leader], ["인원", pax], ["항공", [ev.flightNo, ev.arriveTime && `도착 ${ev.arriveTime}`, ev.outTime && `아웃 ${ev.outTime}`].filter(Boolean).join(" · ")], ["숙소", hotel], ["가이드", [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ")], ["차량", car], ["기사님", driver], ["기타 사항", ev.memo]].filter(r => r[1]);
+    ["행사 대표", leader], ["인원", pax], ["항공", [ev.flightNo, ev.arriveTime && `도착 ${ev.arriveTime}`, ev.outTime && `아웃 ${ev.outTime}`].filter(Boolean).join(" · ")], ["숙소", hotel], ["가이드", ev.guideName ? [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ") : "가이드 없음"], ["차량", car], ["기사님", driver], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
     <h1>${escH(ev.title)}<span class="st">${escH(STATUS[ev.status].label)}</span></h1>
@@ -869,13 +869,15 @@ function EventCard({
     className: "text-slate-500"
   }, " \xB7 ", ev.occupancy), ev.roomType && /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, " \xB7 ", ev.roomType)), (ev.guideName || ev.guidePhone) && /*#__PURE__*/React.createElement(Row, {
+  }, " \xB7 ", ev.roomType)), /*#__PURE__*/React.createElement(Row, {
     icon: "Flag"
-  }, /*#__PURE__*/React.createElement("span", {
+  }, ev.guideName ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC "), ev.guideName && /*#__PURE__*/React.createElement("b", {
+  }, "\uAC00\uC774\uB4DC "), /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.guideName), ev.guidePhone && /*#__PURE__*/React.createElement("a", {
+  }, ev.guideName)) : /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500"
+  }, "\uAC00\uC774\uB4DC \uC5C6\uC74C"), ev.guidePhone && /*#__PURE__*/React.createElement("a", {
     href: `tel:${ev.guidePhone}`,
     className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold",
     style: { marginLeft: 6 }
