@@ -988,7 +988,7 @@ const EmptyState = ({
 }), text);
 
 /* ---------- 월간 달력: 한 주 안에서 행사 막대 줄(레인) 배치 ---------- */
-const MAX_LANES = 3,
+const MAX_LANES = 5,
   LANE_H = 17;
 const layoutWeek = (week, events) => {
   const ws = week[0],
@@ -1902,7 +1902,8 @@ function App() {
   }, /*#__PURE__*/React.createElement("header", {
     className: "sticky top-0 z-30 bg-slate-100/90 backdrop-blur px-4 pt-4 pb-3"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "flex items-center justify-between"
+    className: "flex justify-between",
+    style: { alignItems: "flex-end" }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
       setCursor(new Date());
@@ -1920,6 +1921,25 @@ function App() {
     className: "brand-title text-2xl font-bold text-blue-700",
     style: { whiteSpace: "nowrap" }
   }, "\uD589\uC0AC \uCE98\uB9B0\uB354"), /*#__PURE__*/React.createElement(Clock, null))), /*#__PURE__*/React.createElement("div", {
+    className: "flex flex-col items-end"
+  }, /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center gap-1 text-xs",
+    style: { justifyContent: "flex-end", marginBottom: 4, maxWidth: 240 }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `flex items-center gap-1 truncate min-w-0 ${sync.state === "error" ? "text-rose-600" : "text-slate-500"}`
+  }, /*#__PURE__*/React.createElement("span", {
+    className: `w-2 h-2 rounded-full shrink-0 ${sync.state === "ok" ? "bg-emerald-500" : sync.state === "error" ? "bg-rose-500" : "bg-amber-400 animate-pulse"}`
+  }), /*#__PURE__*/React.createElement("span", { className: "truncate" }, sync.state === "loading" ? "불러오는 중…" : sync.state === "saving" ? "저장 중…" : sync.state === "error" ? sync.msg : `공유 ${sync.at ? hhmm(sync.at) : ""} 기준${!canEdit ? " · 보기 전용" : ""}`)), /*#__PURE__*/React.createElement("button", {
+    onClick: () => refresh(),
+    disabled: sync.state === "saving",
+    className: "shrink-0 rounded-lg font-semibold text-blue-700 active:bg-slate-200 flex items-center gap-1",
+    style: { height: 22, padding: "0 6px" },
+    "aria-label": "\uC0C8\uB85C\uACE0\uCE68"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "RefreshCw",
+    size: 13,
+    className: sync.state === "loading" ? "animate-spin" : ""
+  }), "\uC0C8\uB85C\uACE0\uCE68")), /*#__PURE__*/React.createElement("div", {
     className: "flex gap-1.5"
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => setShowAdmin(true),
@@ -1946,7 +1966,7 @@ function App() {
   }, /*#__PURE__*/React.createElement(Icon, {
     name: showSearch ? "X" : "Search",
     size: 18
-  })))), showSearch && /*#__PURE__*/React.createElement("div", {
+  }))))), showSearch && /*#__PURE__*/React.createElement("div", {
     className: "mt-3 relative"
   }, /*#__PURE__*/React.createElement("span", {
     className: "absolute left-3 top-1/2 -translate-y-1/2 text-slate-400"
@@ -1973,23 +1993,7 @@ function App() {
     label: "\uD655\uC815 \uB300\uAE30",
     value: `${pending}건`,
     warn: pending > 0
-  })), /*#__PURE__*/React.createElement("div", {
-    className: "mt-2 flex items-center justify-between text-xs px-1"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: `flex items-center gap-1.5 truncate ${sync.state === "error" ? "text-rose-600" : "text-slate-500"}`
-  }, /*#__PURE__*/React.createElement("span", {
-    className: `w-2 h-2 rounded-full shrink-0 ${sync.state === "ok" ? "bg-emerald-500" : sync.state === "error" ? "bg-rose-500" : "bg-amber-400 animate-pulse"}`
-  }), sync.state === "loading" ? "불러오는 중…" : sync.state === "saving" ? "저장 중…" : sync.state === "error" ? sync.msg : `공유 일정 · ${sync.at ? hhmm(sync.at) : ""} 기준`, !canEdit && sync.state === "ok" && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400"
-  }, "\xB7 \uBCF4\uAE30 \uC804\uC6A9")), /*#__PURE__*/React.createElement("button", {
-    onClick: () => refresh(),
-    disabled: sync.state === "saving",
-    className: "shrink-0 h-8 px-2.5 rounded-lg font-semibold text-blue-700 active:bg-slate-200 flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "RefreshCw",
-    size: 13,
-    className: sync.state === "loading" ? "animate-spin" : ""
-  }), "\uC0C8\uB85C\uACE0\uCE68"))), /*#__PURE__*/React.createElement("main", {
+  }))), /*#__PURE__*/React.createElement("main", {
     className: "px-4 pt-1 pb-32"
   }, view === "month" && /*#__PURE__*/React.createElement(MonthView, {
     cursor: cursor,
@@ -2386,10 +2390,12 @@ const Stat = ({
   value,
   warn
 }) => /*#__PURE__*/React.createElement("div", {
-  className: "bg-white rounded-xl ring-1 ring-slate-200/70 px-3 py-2 shadow-sm"
+  className: "bg-white rounded-xl ring-1 ring-slate-200/70 px-2.5 shadow-sm flex items-center justify-between gap-1",
+  style: { paddingTop: 7, paddingBottom: 7 }
 }, /*#__PURE__*/React.createElement("p", {
-  className: "text-[11px] text-slate-400 font-semibold"
+  className: "text-[11px] text-slate-400 font-semibold whitespace-nowrap"
 }, label), /*#__PURE__*/React.createElement("p", {
+  style: { whiteSpace: "nowrap" },
   className: `font-extrabold ${warn ? "text-amber-600" : "text-slate-900"}`
 }, value));
 ReactDOM.createRoot(document.getElementById("root")).render( /*#__PURE__*/React.createElement(App, null));
