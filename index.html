@@ -478,6 +478,28 @@ const short = s => {
   return `${d.getMonth() + 1}.${d.getDate()}(${WD[d.getDay()]})`;
 };
 const nights = ev => Math.round((parse(ev.end) - parse(ev.start)) / 86400000);
+/* 식당: 날짜별 조식·중식·석식 (식당명 n, 메뉴 m) */
+const MEALS = [["b", "조식"], ["l", "중식"], ["d", "석식"]];
+const dayCount = ev => {
+  const n = ev.start && ev.end ? nights(ev) : 0;
+  return Math.max(1, Math.min(15, (isNaN(n) || n < 0 ? 0 : n) + 1));
+};
+/* 식당을 하나라도 입력하면 모든 날짜·끼니를 보여주고, 빈 칸은 '없음' */
+const mealLines = ev => {
+  const n = dayCount(ev);
+  const txt = (i, k) => {
+    const x = (ev.meals || [])[i] && ev.meals[i][k] || {};
+    return [x.n, x.m].filter(s => s && s.trim()).join(" · ");
+  };
+  let any = false;
+  for (let i = 0; i < n; i++) for (const [k] of MEALS) if (txt(i, k)) any = true;
+  if (!any) return [];
+  return Array.from({ length: n }, (_, i) => ({
+    day: `${i + 1}일차`,
+    date: ev.start ? short(addDays(ev.start, i)) : "",
+    items: MEALS.map(([k, l]) => ({ l, t: txt(i, k) || "없음", none: !txt(i, k) }))
+  }));
+};
 const inDay = (ev, ds) => ev.start <= ds && ds <= ev.end;
 const TODAY = fmt(new Date());
 /* 행사 마지막 날이 지나면 자동 처리: 확정 → 완료, 대기 → 대기완료 (취소는 그대로) */
@@ -816,6 +838,7 @@ const EMPTY = () => ({
   driverPhone: "",
   carCompany: "",
   plate: "",
+  meals: [],
   memo: ""
 });
 
@@ -842,7 +865,7 @@ function printEvent(ev) {
   const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", ev.agency], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
-    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", ev.guideName ? [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ") : "가이드 없음"], ["차량", car], ["기사님", driver], ["기타 사항", ev.memo]].filter(r => r[1]);
+    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", ev.guideName ? [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
     <h1>${escH(ev.title)}<span class="st">${escH(STATUS[ev.status].label)}</span></h1>
@@ -982,7 +1005,28 @@ function EventCard({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Phone",
     size: 12
-  }), ev.driverPhone)))), ev.memo && /*#__PURE__*/React.createElement("div", {
+  }), ev.driverPhone)))), mealLines(ev).length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "mt-3"
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold text-slate-700 flex items-center gap-1 mb-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rounded-full",
+    style: { width: 4, height: 4, display: "inline-block", background: "currentColor" }
+  }), "\uC2DD\uB2F9"), /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-slate-700 bg-slate-50 rounded-xl p-3 space-y-3"
+  }, mealLines(ev).map(d => /*#__PURE__*/React.createElement("div", {
+    key: d.day
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-semibold text-slate-500"
+  }, d.day, " ", d.date), d.items.map(x => /*#__PURE__*/React.createElement("p", {
+    key: x.l,
+    className: "flex gap-2"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0 text-slate-500"
+  }, x.l), /*#__PURE__*/React.createElement("span", {
+    className: x.none ? "min-w-0 text-slate-400" : "min-w-0",
+    style: { wordBreak: "break-all" }
+  }, x.t))))))), ev.memo && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
@@ -1660,6 +1704,46 @@ function EventForm({
     onChange: e => set("plate", e.target.value),
     placeholder: "\uC81C\uC8FC 70\uBC14 1234"
   })))), /*#__PURE__*/React.createElement(Group, {
+    title: "\uC2DD\uB2F9"
+  }, Array.from({
+    length: dayCount(f)
+  }, (_, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: { display: "flex", flexDirection: "column", gap: 8 }
+  }, /*#__PURE__*/React.createElement("p", {
+    className: "text-xs font-bold text-slate-700 flex items-center gap-1"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rounded-full",
+    style: { width: 4, height: 4, display: "inline-block", background: "currentColor" }
+  }), `${i + 1}일차`, f.start && /*#__PURE__*/React.createElement("span", {
+    className: "font-medium text-slate-400"
+  }, short(addDays(f.start, i)))), MEALS.map(([k, l]) => {
+    const x = (f.meals || [])[i] && f.meals[i][k] || {};
+    const setMeal = (fld, v) => {
+      const meals = (f.meals || []).slice();
+      while (meals.length <= i) meals.push({});
+      meals[i] = { ...meals[i], [k]: { ...(meals[i][k] || {}), [fld]: v } };
+      set("meals", meals);
+    };
+    return /*#__PURE__*/React.createElement("div", {
+      key: k,
+      style: { display: "grid", gridTemplateColumns: "34px 1fr 1.3fr", gap: 6, alignItems: "center" }
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-sm font-semibold text-slate-600"
+    }, l), /*#__PURE__*/React.createElement("input", {
+      className: inp,
+      value: x.n || "",
+      onChange: e => setMeal("n", e.target.value),
+      placeholder: "\uC2DD\uB2F9\uBA85",
+      "aria-label": `${i + 1}일차 ${l} 식당명`
+    }), /*#__PURE__*/React.createElement("input", {
+      className: inp,
+      value: x.m || "",
+      onChange: e => setMeal("m", e.target.value),
+      placeholder: "\uBA54\uB274",
+      "aria-label": `${i + 1}일차 ${l} 메뉴`
+    }));
+  })))), /*#__PURE__*/React.createElement(Group, {
     title: "\uAE30\uD0C0 \uC0AC\uD56D"
   }, /*#__PURE__*/React.createElement("textarea", {
     rows: 4,
@@ -1958,7 +2042,7 @@ function App() {
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return events;
-    return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo].join(" ").toLowerCase().includes(k));
+    return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
   }, [events, q]);
   const todayEvs = events.filter(e => inDay(e, TODAY) && e.status !== "cancelled");
   const pax = todayEvs.reduce((s, e) => s + total(e), 0);
