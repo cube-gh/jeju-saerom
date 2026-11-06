@@ -2044,9 +2044,11 @@ function App() {
     if (!k) return events;
     return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
   }, [events, q]);
-  const todayEvs = events.filter(e => inDay(e, TODAY) && e.status !== "cancelled");
-  const pax = todayEvs.reduce((s, e) => s + total(e), 0);
-  const pending = events.filter(e => e.status === "pending" && e.end >= TODAY).length;
+  /* 요약: 오늘 시작 / 진행(오늘 행사 중) / 오늘 아웃 — 취소 제외 */
+  const live = events.filter(e => e.status !== "cancelled");
+  const startCnt = live.filter(e => e.start === TODAY).length;
+  const ongoingCnt = live.filter(e => inDay(e, TODAY)).length;
+  const outCnt = live.filter(e => (e.end || e.start) === TODAY).length;
   const save = async ev => {
     const isNew = !events.some(x => x.id === ev.id);
     const ok = await runCommit(list => list.some(x => x.id === ev.id) ? list.map(x => x.id === ev.id ? ev : x) : [...list, ev], isNew ? "등록되었습니다" : "수정되었습니다");
@@ -2178,15 +2180,14 @@ function App() {
   }, "\uAC80\uC0C9 \uACB0\uACFC ", filtered.length, "\uAC74")), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-3 gap-2 mt-3"
   }, /*#__PURE__*/React.createElement(Stat, {
-    label: "\uC624\uB298 \uC9C4\uD589",
-    value: `${todayEvs.length}건`
+    label: "오늘 시작",
+    value: `${startCnt}건`
   }), /*#__PURE__*/React.createElement(Stat, {
-    label: "\uC624\uB298 \uC778\uC6D0",
-    value: `${pax}명`
+    label: "진행",
+    value: `${ongoingCnt}건`
   }), /*#__PURE__*/React.createElement(Stat, {
-    label: "\uD655\uC815 \uB300\uAE30",
-    value: `${pending}건`,
-    warn: pending > 0
+    label: "오늘 아웃",
+    value: `${outCnt}건`
   }))), /*#__PURE__*/React.createElement("main", {
     className: "px-4 pt-1 pb-32"
   }, view === "month" && /*#__PURE__*/React.createElement(MonthView, {
