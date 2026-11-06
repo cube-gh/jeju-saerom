@@ -2585,13 +2585,14 @@ const Stat = ({
   value,
   warn
 }) => /*#__PURE__*/React.createElement("div", {
-  className: "bg-white rounded-xl ring-1 ring-slate-200/70 px-2.5 shadow-sm flex items-center justify-between gap-1",
-  style: { paddingTop: 7, paddingBottom: 7 }
+  className: "bg-white rounded-xl ring-1 ring-slate-200/70 shadow-sm flex items-center justify-between gap-1",
+  style: { paddingTop: 4, paddingBottom: 4, paddingLeft: 9, paddingRight: 9 }
 }, /*#__PURE__*/React.createElement("p", {
-  className: "text-[11px] text-slate-400 font-semibold whitespace-nowrap"
+  className: "font-bold text-slate-700 whitespace-nowrap",
+  style: { fontSize: 13 }
 }, label), /*#__PURE__*/React.createElement("p", {
-  style: { whiteSpace: "nowrap" },
-  className: `font-extrabold ${warn ? "text-amber-600" : "text-slate-900"}`
+  style: { whiteSpace: "nowrap", fontSize: 13, color: warn ? undefined : "rgb(var(--emerald-500))" },
+  className: `font-extrabold ${warn ? "text-amber-600" : ""}`
 }, value));
 ReactDOM.createRoot(document.getElementById("root")).render( /*#__PURE__*/React.createElement(App, null));
 </script>
