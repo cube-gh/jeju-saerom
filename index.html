@@ -6,6 +6,9 @@
 <meta name="theme-color" content="#F4F0E6" />
 <title>새롬 행사 캘린더</title>
 <meta name="robots" content="noindex, nofollow" />
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
 <script>
   /* 저장된 테마(없으면 폰 설정)를 화면 그리기 전에 적용 → 깜빡임 방지 */
   (function(){ try {
@@ -502,6 +505,38 @@ const mealLines = ev => {
 };
 const inDay = (ev, ds) => ev.start <= ds && ds <= ev.end;
 const TODAY = fmt(new Date());
+
+/* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
+   ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
+const APP_BUILD = "2026-11-11-1430";
+(() => {
+  const base = location.href.split("?")[0].split("#")[0];
+  if (!/^https?:/.test(base)) return;
+  const busy = () => document.body.style.overflow === "hidden"; // 일정 등록·수정 창이 열려 있으면 기다림
+  let checking = false;
+  const check = async first => {
+    if (checking || document.visibilityState === "hidden") return;
+    checking = true;
+    try {
+      const res = await fetch(`${base}?build=${Date.now()}`, { cache: "no-store" });
+      if (!res.ok) return;
+      const m = (await res.text()).match(/const APP_BUILD = "([^"]+)"/);
+      const latest = m && m[1];
+      if (!latest || latest === APP_BUILD) return;
+      let tried = "";
+      try { tried = sessionStorage.getItem("saerom-reload") || ""; } catch (e) {}
+      if (tried === latest) return; // 같은 버전으로 이미 한 번 다시 불러왔으면 반복하지 않음
+      if (!first && busy()) return;
+      try { sessionStorage.setItem("saerom-reload", latest); } catch (e) {}
+      location.replace(`${base}?v=${encodeURIComponent(latest)}`);
+    } catch (e) {} finally {
+      checking = false;
+    }
+  };
+  check(true);
+  document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(false); });
+  setInterval(() => check(false), 10 * 60 * 1000);
+})();
 /* 행사 마지막 날이 지나면 자동 처리: 확정 → 완료, 대기 → 대기완료 (취소는 그대로) */
 const autoDone = list => {
   const today = fmt(new Date());
