@@ -513,7 +513,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1605";
+const APP_BUILD = "2026-11-11-1700";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -1564,6 +1564,12 @@ function EventForm({
     [k]: v
   }));
   const isEdit = !!initial.id;
+  /* 바깥(어두운 부분)을 눌러도 닫히지 않음. ✕로 닫을 때 입력한 내용이 있으면 한 번 더 확인 */
+  const dirty = JSON.stringify(f) !== JSON.stringify(initial);
+  const tryClose = () => {
+    if (dirty && !confirm("입력한 내용이 저장되지 않습니다. 닫을까요?")) return;
+    onClose();
+  };
   const submit = e => {
     e.preventDefault();
     if (!f.title.trim()) return setErr("행사명을 입력해 주세요.");
@@ -1577,8 +1583,7 @@ function EventForm({
   return /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center"
   }, /*#__PURE__*/React.createElement("div", {
-    className: "absolute inset-0 bg-black/50 backdrop-blur-[2px]",
-    onClick: onClose
+    className: "absolute inset-0 bg-black/50 backdrop-blur-[2px]"
   }), /*#__PURE__*/React.createElement("form", {
     onSubmit: submit,
     className: "sheet relative bg-slate-50 w-full sm:max-w-lg max-h-[92vh] rounded-t-3xl sm:rounded-3xl flex flex-col shadow-2xl"
@@ -1594,7 +1599,7 @@ function EventForm({
     className: "font-bold text-slate-900"
   }, isEdit ? "일정 수정" : "새 일정 등록")), /*#__PURE__*/React.createElement("button", {
     type: "button",
-    onClick: onClose,
+    onClick: tryClose,
     className: "w-11 h-11 rounded-xl flex items-center justify-center active:bg-slate-200",
     "aria-label": "\uB2EB\uAE30"
   }, /*#__PURE__*/React.createElement(Icon, {
