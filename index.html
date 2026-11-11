@@ -508,7 +508,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1430";
+const APP_BUILD = "2026-11-11-1440";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -2238,10 +2238,15 @@ function App() {
     style: { alignItems: "flex-end" }
   }, /*#__PURE__*/React.createElement("button", {
     onClick: () => {
+      /* 처음 열었을 때 화면으로: 월간·오늘, 검색·강조 해제, 맨 위, 최신 일정 다시 불러오기 */
       setCursor(new Date());
       setSelected(TODAY);
-      if (view === "list") setView("month");
+      setView("month");
+      setQ("");
+      setShowSearch(false);
+      setFocus(null);
       window.scrollTo({ top: 0, behavior: "smooth" });
+      refresh();
     },
     className: "text-left active:opacity-60",
     "aria-label": "\uC624\uB298\uB85C"
