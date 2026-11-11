@@ -505,13 +505,15 @@ const mealLines = ev => {
   }));
 };
 /* 가이드 여러 명: 첫 번째는 guideName/guidePhone, 추가 가이드는 guides 배열 */
+/* 차량 여러 대: 첫 번째는 기존 칸, 추가 차량은 cars 배열 (co 회사, pl 번호, dn 기사, dp 기사 연락처) */
+const extraCars = ev => (ev.cars || []).filter(c => ["co", "pl", "dn", "dp"].some(k => (c[k] || "").trim()));
 const allGuides = ev => [{ n: ev.guideName, p: ev.guidePhone }, ...(ev.guides || [])].filter(g => (g.n || "").trim() || (g.p || "").trim());
 const inDay = (ev, ds) => ev.start <= ds && ds <= ev.end;
 const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1550";
+const APP_BUILD = "2026-11-11-1600";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -878,6 +880,7 @@ const EMPTY = () => ({
   driverPhone: "",
   carCompany: "",
   plate: "",
+  cars: [],
   meals: [],
   memo: ""
 });
@@ -902,7 +905,7 @@ function printEvent(ev) {
   const pax = [`성인 ${ev.adult || 0}`, +ev.child ? `아동 ${ev.child}` : "", +ev.infant ? `유아 ${ev.infant}` : ""].filter(Boolean).join(" · ") + ` / 총 ${total(ev)}명`;
   const hotel = [ev.hotelName || "미정", +ev.rooms ? `${ev.rooms}객실` : "", ev.occupancy, ev.roomType].filter(Boolean).join(" · ");
   const car = [ev.vehicleType ? ev.vehicleType + (+ev.vehicleCount ? ` ${ev.vehicleCount}대` : "") : "미정", ev.carCompany, ev.plate].filter(Boolean).join(" · ");
-  const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
+  const driver = [[ev.driverName, ev.driverPhone].filter(Boolean).join(" · "), ...extraCars(ev).map((c, i) => [`차량 ${i + 2}`, c.co, c.pl, c.dn, c.dp].filter(Boolean).join(" · "))].filter(Boolean).join("\n");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", [ev.agency, ev.agencyPhone].filter(Boolean).join(" · ")], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
     ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", allGuides(ev).length ? allGuides(ev).map(g => [g.n, g.p].filter(Boolean).join(" · ")).join("\n") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
@@ -1057,7 +1060,24 @@ function EventCard({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Phone",
     size: 12
-  }), ev.driverPhone)))), mealLines(ev).length > 0 && /*#__PURE__*/React.createElement("div", {
+  }), ev.driverPhone))), extraCars(ev).map((c, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    className: "flex items-start gap-2 min-w-0"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "shrink-0",
+    style: { width: 15 }
+  }), /*#__PURE__*/React.createElement("span", {
+    className: "min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500"
+  }, /*#__PURE__*/React.createElement("span", null, `차량 ${i + 2}`), c.co && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.co), c.pl && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.pl), c.dn && /*#__PURE__*/React.createElement("span", null, "\xB7 \uAE30\uC0AC ", /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, c.dn)), c.dp && /*#__PURE__*/React.createElement("a", {
+    href: `tel:${c.dp}`,
+    onClick: e => e.stopPropagation(),
+    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Phone",
+    size: 12
+  }), c.dp))))), mealLines(ev).length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement("p", {
     className: "text-xs font-bold text-slate-700 flex items-center gap-1 mb-1"
@@ -1870,6 +1890,20 @@ function EventForm({
     key: v,
     value: v
   }))), /*#__PURE__*/React.createElement("div", {
+    className: "flex items-center justify-between border-t border-slate-100 pt-3"
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-slate-500"
+  }, (f.cars || []).length ? "\uCC28\uB7C9 1" : "\uAE30\uC0AC\uB2D8 \xB7 \uCC28\uB7C9 \uC815\uBCF4"), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => set("cars", [...(f.cars || []), { dn: "", dp: "", co: "", pl: "" }]),
+    className: "rounded-full flex items-center justify-center bg-blue-600 text-white active:scale-95 transition",
+    style: { width: 34, height: 34 },
+    "aria-label": "\uCC28\uB7C9 \uCD94\uAC00",
+    title: "\uCC28\uB7C9 \uCD94\uAC00"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Plus",
+    size: 18
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uAE30\uC0AC\uB2D8 \uC131\uBA85"
@@ -1901,7 +1935,35 @@ function EventForm({
     value: f.plate,
     onChange: e => set("plate", e.target.value),
     placeholder: "\uC81C\uC8FC 70\uBC14 1234"
-  })))), /*#__PURE__*/React.createElement(Group, {
+  }))), (f.cars || []).map((c, i) => {
+    const upd = (k, v) => set("cars", f.cars.map((x, j) => j === i ? { ...x, [k]: v } : x));
+    const box = (k, ph, lab, tel) => /*#__PURE__*/React.createElement("input", {
+      className: inp,
+      value: c[k] || "",
+      onChange: e => upd(k, e.target.value),
+      placeholder: ph,
+      "aria-label": `차량 ${i + 2} ${lab}`,
+      ...(tel ? { type: "tel", inputMode: "tel" } : {})
+    });
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "border-t border-slate-100 pt-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between mb-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-semibold text-slate-500"
+    }, `차량 ${i + 2}`), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => set("cars", f.cars.filter((_, j) => j !== i)),
+      className: "h-7 px-2 rounded-lg text-xs font-semibold text-rose-600 active:bg-slate-100 flex items-center gap-1",
+      "aria-label": `차량 ${i + 2} 삭제`
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "X",
+      size: 13
+    }), "\uC0AD\uC81C")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 gap-2"
+    }, box("dn", "기사님 성명", "기사님 성명"), box("dp", "기사님 연락처", "기사님 연락처", true), box("co", "차량회사", "차량회사"), box("pl", "차량 번호", "차량 번호")));
+  })), /*#__PURE__*/React.createElement(Group, {
     title: "\uC2DD\uB2F9"
   }, Array.from({
     length: dayCount(f)
@@ -2245,7 +2307,7 @@ function App() {
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return events;
-    return events.filter(e => [e.title, e.category, e.agency, e.agencyPhone, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, ...allGuides(e).flatMap(g => [g.n, g.p]), e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
+    return events.filter(e => [e.title, e.category, e.agency, e.agencyPhone, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, ...allGuides(e).flatMap(g => [g.n, g.p]), e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.driverPhone, ...extraCars(e).flatMap(c => [c.co, c.pl, c.dn, c.dp]), e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
   }, [events, q]);
   /* 요약: 오늘 시작 / 진행(오늘 행사 중) / 오늘 아웃 — 취소 제외 */
   const [focus, setFocus] = useState(null);
