@@ -513,7 +513,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1600";
+const APP_BUILD = "2026-11-11-1605";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -908,7 +908,7 @@ function printEvent(ev) {
   const driver = [[ev.driverName, ev.driverPhone].filter(Boolean).join(" · "), ...extraCars(ev).map((c, i) => [`차량 ${i + 2}`, c.co, c.pl, c.dn, c.dp].filter(Boolean).join(" · "))].filter(Boolean).join("\n");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", [ev.agency, ev.agencyPhone].filter(Boolean).join(" · ")], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
-    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", allGuides(ev).length ? allGuides(ev).map(g => [g.n, g.p].filter(Boolean).join(" · ")).join("\n") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
+    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드님", allGuides(ev).length ? allGuides(ev).map(g => [g.n, g.p].filter(Boolean).join(" · ")).join("\n") : "가이드님 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
     <h1>${escH(ev.title)}<span class="st">${escH(STATUS[ev.status].label)}</span></h1>
@@ -1024,7 +1024,7 @@ function EventCard({
     style: { display: "block" }
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC "), g.n && /*#__PURE__*/React.createElement("b", {
+  }, "\uAC00\uC774\uB4DC\uB2D8 "), g.n && /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
   }, g.n), g.p && /*#__PURE__*/React.createElement("a", {
     href: `tel:${g.p}`,
@@ -1036,7 +1036,7 @@ function EventCard({
     size: 12
   }), g.p))) : /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC \uC5C6\uC74C")), /*#__PURE__*/React.createElement("div", {
+  }, "\uAC00\uC774\uB4DC\uB2D8 \uC5C6\uC74C")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start gap-2 min-w-0"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-400 shrink-0 mt-0.5"
@@ -1051,7 +1051,7 @@ function EventCard({
     className: "text-slate-500"
   }, "\xB7 ", ev.plate), ev.driverName && /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\xB7 \uAE30\uC0AC ", /*#__PURE__*/React.createElement("b", {
+  }, "\xB7 \uAE30\uC0AC\uB2D8 ", /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
   }, ev.driverName)), ev.driverPhone && /*#__PURE__*/React.createElement("a", {
     href: `tel:${ev.driverPhone}`,
@@ -1068,7 +1068,7 @@ function EventCard({
     style: { width: 15 }
   }), /*#__PURE__*/React.createElement("span", {
     className: "min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500"
-  }, /*#__PURE__*/React.createElement("span", null, `차량 ${i + 2}`), c.co && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.co), c.pl && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.pl), c.dn && /*#__PURE__*/React.createElement("span", null, "\xB7 \uAE30\uC0AC ", /*#__PURE__*/React.createElement("b", {
+  }, /*#__PURE__*/React.createElement("span", null, `차량 ${i + 2}`), c.co && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.co), c.pl && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.pl), c.dn && /*#__PURE__*/React.createElement("span", null, "\xB7 \uAE30\uC0AC\uB2D8 ", /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
   }, c.dn)), c.dp && /*#__PURE__*/React.createElement("a", {
     href: `tel:${c.dp}`,
