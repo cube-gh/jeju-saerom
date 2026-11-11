@@ -508,7 +508,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1440";
+const APP_BUILD = "2026-11-11-1540";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -849,6 +849,7 @@ const EMPTY = () => ({
   title: "",
   category: "",
   agency: "",
+  agencyPhone: "",
   leaderName: "",
   leaderPhone: "",
   status: "confirmed",
@@ -899,7 +900,7 @@ function printEvent(ev) {
   const car = [ev.vehicleType ? ev.vehicleType + (+ev.vehicleCount ? ` ${ev.vehicleCount}대` : "") : "미정", ev.carCompany, ev.plate].filter(Boolean).join(" · ");
   const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
-  const rows = [["행사 구분", ev.category], ["거래처", ev.agency], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
+  const rows = [["행사 구분", ev.category], ["거래처", [ev.agency, ev.agencyPhone].filter(Boolean).join(" · ")], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
     ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", ev.guideName ? [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
@@ -932,13 +933,20 @@ function EventCard({
     className: "flex-1 min-w-0"
   }, /*#__PURE__*/React.createElement("h3", {
     className: "font-bold text-slate-900 leading-snug"
-  }, ev.title), (ev.category || ev.agency) && /*#__PURE__*/React.createElement("div", {
+  }, ev.title), (ev.category || ev.agency || ev.agencyPhone) && /*#__PURE__*/React.createElement("div", {
     className: "mt-1 flex items-center gap-1.5 min-w-0"
   }, ev.category && /*#__PURE__*/React.createElement("span", {
     className: "shrink-0 text-[11px] font-semibold px-1.5 py-0.5 rounded-md bg-blue-50 text-blue-700 ring-1 ring-blue-100"
   }, ev.category), ev.agency && /*#__PURE__*/React.createElement("span", {
     className: "text-xs font-semibold text-amber-600 truncate"
-  }, "\uAC70\uB798\uCC98 \xB7 ", ev.agency))), /*#__PURE__*/React.createElement("div", {
+  }, "\uAC70\uB798\uCC98 \xB7 ", ev.agency), ev.agencyPhone && /*#__PURE__*/React.createElement("a", {
+    href: `tel:${ev.agencyPhone}`,
+    onClick: e => e.stopPropagation(),
+    className: "shrink-0 inline-flex items-center gap-0.5 text-xs text-blue-600 font-semibold"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "Phone",
+    size: 11
+  }), ev.agencyPhone))), /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-1 shrink-0"
   }, /*#__PURE__*/React.createElement(Badge, {
     s: ev.status
@@ -969,7 +977,7 @@ function EventCard({
     size: 14
   })), /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\uB300\uD45C"), ev.leaderName && /*#__PURE__*/React.createElement("span", {
+  }, "\uD589\uC0AC \uB300\uD45C\uC790"), ev.leaderName && /*#__PURE__*/React.createElement("span", {
     className: "font-semibold text-slate-800"
   }, ev.leaderName), ev.leaderPhone && /*#__PURE__*/React.createElement("a", {
     href: `tel:${ev.leaderPhone}`,
@@ -1584,7 +1592,9 @@ function EventForm({
     key: c,
     onClick: () => set("category", f.category === c ? "" : c),
     className: `h-9 rounded-lg text-[13px] font-semibold ring-1 transition ${f.category === c ? "bg-blue-600 text-white ring-blue-600" : "bg-white text-slate-600 ring-slate-200 active:bg-slate-100"}`
-  }, c)))), /*#__PURE__*/React.createElement(Field, {
+  }, c)))), /*#__PURE__*/React.createElement("div", {
+    className: "grid grid-cols-2 gap-2"
+  }, /*#__PURE__*/React.createElement(Field, {
     label: "\uAC70\uB798 \uC5EC\uD589\uC0AC"
   }, /*#__PURE__*/React.createElement("input", {
     className: inp,
@@ -1592,7 +1602,16 @@ function EventForm({
     onChange: e => set("agency", e.target.value),
     placeholder: "\uC608: \u25CB\u25CB\uD22C\uC5B4",
     list: "agencies"
-  })), /*#__PURE__*/React.createElement("div", {
+  })), /*#__PURE__*/React.createElement(Field, {
+    label: "\uB2F4\uB2F9\uC790 \uC5F0\uB77D\uCC98"
+  }, /*#__PURE__*/React.createElement("input", {
+    type: "tel",
+    inputMode: "tel",
+    className: inp,
+    value: f.agencyPhone || "",
+    onChange: e => set("agencyPhone", e.target.value),
+    placeholder: "010-0000-0000"
+  }))), /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uD589\uC0AC \uB300\uD45C\uC790"
@@ -2168,7 +2187,7 @@ function App() {
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return events;
-    return events.filter(e => [e.title, e.category, e.agency, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
+    return events.filter(e => [e.title, e.category, e.agency, e.agencyPhone, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
   }, [events, q]);
   /* 요약: 오늘 시작 / 진행(오늘 행사 중) / 오늘 아웃 — 취소 제외 */
   const [focus, setFocus] = useState(null);
