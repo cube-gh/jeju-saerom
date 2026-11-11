@@ -388,6 +388,7 @@ const ICONS = {
   "User": "<path d=\"M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2\"></path><circle cx=\"12\" cy=\"7\" r=\"4\"></circle>",
   "Lock": "<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 10 0v4\"></path>",
   "Unlock": "<rect width=\"18\" height=\"11\" x=\"3\" y=\"11\" rx=\"2\" ry=\"2\"></rect><path d=\"M7 11V7a5 5 0 0 1 9.9-1\"></path>",
+  "Plus": "<path d=\"M5 12h14\"></path><path d=\"M12 5v14\"></path>",
   "Copy": "<rect width=\"14\" height=\"14\" x=\"8\" y=\"8\" rx=\"2\" ry=\"2\"></rect><path d=\"M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2\"></path>",
   "CopyCheck": "<path d=\"M20 6 9 17l-5-5\"></path>",
   "RefreshCw": "<path d=\"M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8\"></path><path d=\"M21 3v5h-5\"></path><path d=\"M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16\"></path><path d=\"M8 16H3v5\"></path>"
@@ -503,12 +504,14 @@ const mealLines = ev => {
     items: MEALS.map(([k, l]) => ({ l, t: txt(i, k) || "없음", none: !txt(i, k) }))
   }));
 };
+/* 가이드 여러 명: 첫 번째는 guideName/guidePhone, 추가 가이드는 guides 배열 */
+const allGuides = ev => [{ n: ev.guideName, p: ev.guidePhone }, ...(ev.guides || [])].filter(g => (g.n || "").trim() || (g.p || "").trim());
 const inDay = (ev, ds) => ev.start <= ds && ds <= ev.end;
 const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1540";
+const APP_BUILD = "2026-11-11-1550";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -864,6 +867,7 @@ const EMPTY = () => ({
   outTime: "",
   guideName: "",
   guidePhone: "",
+  guides: [],
   hotelName: "",
   occupancy: "",
   roomType: "",
@@ -901,7 +905,7 @@ function printEvent(ev) {
   const driver = [ev.driverName, ev.driverPhone].filter(Boolean).join(" · ");
   const leader = [ev.leaderName, ev.leaderPhone].filter(Boolean).join(" · ");
   const rows = [["행사 구분", ev.category], ["거래처", [ev.agency, ev.agencyPhone].filter(Boolean).join(" · ")], ["기간", `${short(ev.start)} ~ ${short(ev.end)} (${n === 0 ? "당일" : `${n}박 ${n + 1}일`})`],
-    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", ev.guideName ? [ev.guideName, ev.guidePhone].filter(Boolean).join(" · ") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
+    ["행사 대표", leader], ["인원", pax], ["도착 항공", [ev.flightNo, ev.arriveTime].filter(Boolean).join(" ")], ["아웃 항공", [ev.outFlightNo, ev.outTime].filter(Boolean).join(" ")], ["숙소", hotel], ["가이드", allGuides(ev).length ? allGuides(ev).map(g => [g.n, g.p].filter(Boolean).join(" · ")).join("\n") : "가이드 없음"], ["차량", car], ["기사님", driver], ["식당", mealLines(ev).map(d => `${d.day} ${d.date}\n` + d.items.map(x => `  ${x.l} ${x.t}`).join("\n")).join("\n")], ["기타 사항", ev.memo]].filter(r => r[1]);
   const now = new Date();
   document.getElementById("print-area").innerHTML = `<div class="pc"><div class="co">(주)제주새롬여행사 · 행사 일정</div>
     <h1>${escH(ev.title)}<span class="st">${escH(STATUS[ev.status].label)}</span></h1>
@@ -1012,20 +1016,24 @@ function EventCard({
     className: "text-slate-500"
   }, " \xB7 ", ev.roomType)), /*#__PURE__*/React.createElement(Row, {
     icon: "Flag"
-  }, ev.guideName ? /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+  }, allGuides(ev).length ? allGuides(ev).map((g, i) => /*#__PURE__*/React.createElement("span", {
+    key: i,
+    style: { display: "block" }
+  }, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC "), /*#__PURE__*/React.createElement("b", {
+  }, "\uAC00\uC774\uB4DC "), g.n && /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.guideName)) : /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC \uC5C6\uC74C"), ev.guidePhone && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${ev.guidePhone}`,
+  }, g.n), g.p && /*#__PURE__*/React.createElement("a", {
+    href: `tel:${g.p}`,
+    onClick: e => e.stopPropagation(),
     className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold",
     style: { marginLeft: 6 }
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Phone",
     size: 12
-  }), ev.guidePhone)), /*#__PURE__*/React.createElement("div", {
+  }), g.p))) : /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500"
+  }, "\uAC00\uC774\uB4DC \uC5C6\uC74C")), /*#__PURE__*/React.createElement("div", {
     className: "flex items-start gap-2 min-w-0"
   }, /*#__PURE__*/React.createElement("span", {
     className: "text-slate-400 shrink-0 mt-0.5"
@@ -1762,7 +1770,18 @@ function EventForm({
     value: f.rooms,
     onChange: e => set("rooms", e.target.value)
   })))), /*#__PURE__*/React.createElement(Group, {
-    title: "\uAC00\uC774\uB4DC\uB2D8"
+    title: "\uAC00\uC774\uB4DC\uB2D8",
+    action: /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => set("guides", [...(f.guides || []), { n: "", p: "" }]),
+      className: "rounded-full flex items-center justify-center bg-blue-600 text-white active:scale-95 transition",
+      style: { width: 34, height: 34 },
+      "aria-label": "\uAC00\uC774\uB4DC \uCD94\uAC00",
+      title: "\uAC00\uC774\uB4DC \uCD94\uAC00"
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "Plus",
+      size: 18
+    }))
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
@@ -1779,7 +1798,41 @@ function EventForm({
     className: inp,
     value: f.guidePhone || "",
     onChange: e => set("guidePhone", e.target.value), placeholder: "010-0000-0000"
-  })))), /*#__PURE__*/React.createElement(Group, {
+  }))), (f.guides || []).map((g, i) => {
+    const upd = (k, v) => set("guides", f.guides.map((x, j) => j === i ? { ...x, [k]: v } : x));
+    return /*#__PURE__*/React.createElement("div", {
+      key: i,
+      className: "border-t border-slate-100 pt-3"
+    }, /*#__PURE__*/React.createElement("div", {
+      className: "flex items-center justify-between mb-1"
+    }, /*#__PURE__*/React.createElement("span", {
+      className: "text-xs font-semibold text-slate-500"
+    }, `가이드님 ${i + 2}`), /*#__PURE__*/React.createElement("button", {
+      type: "button",
+      onClick: () => set("guides", f.guides.filter((_, j) => j !== i)),
+      className: "h-7 px-2 rounded-lg text-xs font-semibold text-rose-600 active:bg-slate-100 flex items-center gap-1",
+      "aria-label": `가이드님 ${i + 2} 삭제`
+    }, /*#__PURE__*/React.createElement(Icon, {
+      name: "X",
+      size: 13
+    }), "\uC0AD\uC81C")), /*#__PURE__*/React.createElement("div", {
+      className: "grid grid-cols-2 gap-2"
+    }, /*#__PURE__*/React.createElement("input", {
+      className: inp,
+      value: g.n || "",
+      onChange: e => upd("n", e.target.value),
+      placeholder: "\uC131\uBA85",
+      "aria-label": `가이드님 ${i + 2} 성명`
+    }), /*#__PURE__*/React.createElement("input", {
+      type: "tel",
+      inputMode: "tel",
+      className: inp,
+      value: g.p || "",
+      onChange: e => upd("p", e.target.value),
+      placeholder: "010-0000-0000",
+      "aria-label": `가이드님 ${i + 2} 연락처`
+    })));
+  })), /*#__PURE__*/React.createElement(Group, {
     title: "\uCC28\uB7C9"
   }, /*#__PURE__*/React.createElement("div", {
     className: "grid grid-cols-[1fr_96px] gap-2"
@@ -1915,10 +1968,15 @@ function EventForm({
 const inp = "w-full h-11 px-3 rounded-xl bg-white ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 placeholder:text-slate-400";
 const Group = ({
   title,
+  action,
   children
 }) => /*#__PURE__*/React.createElement("div", {
   className: "bg-white rounded-2xl p-3 ring-1 ring-slate-200/70 space-y-3"
+}, action ? /*#__PURE__*/React.createElement("div", {
+  className: "flex items-center justify-between"
 }, /*#__PURE__*/React.createElement("p", {
+  className: "text-sm font-bold text-slate-700"
+}, title), action) : /*#__PURE__*/React.createElement("p", {
   className: "text-sm font-bold text-slate-700"
 }, title), children);
 const Field = ({
@@ -2187,7 +2245,7 @@ function App() {
   const filtered = useMemo(() => {
     const k = q.trim().toLowerCase();
     if (!k) return events;
-    return events.filter(e => [e.title, e.category, e.agency, e.agencyPhone, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, e.guideName, e.guidePhone, e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
+    return events.filter(e => [e.title, e.category, e.agency, e.agencyPhone, e.leaderName, e.leaderPhone, e.flightNo, e.outFlightNo, ...allGuides(e).flatMap(g => [g.n, g.p]), e.hotelName, e.occupancy, e.roomType, e.vehicleType, e.carCompany, e.plate, e.driverName, e.memo, ...mealLines(e).flatMap(d => d.items.filter(x => !x.none).map(x => x.t))].join(" ").toLowerCase().includes(k));
   }, [events, q]);
   /* 요약: 오늘 시작 / 진행(오늘 행사 중) / 오늘 아웃 — 취소 제외 */
   const [focus, setFocus] = useState(null);
