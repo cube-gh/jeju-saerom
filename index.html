@@ -513,7 +513,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-11-1700";
+const APP_BUILD = "2026-11-13-1020";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -966,121 +966,68 @@ function EventCard({
   }, /*#__PURE__*/React.createElement(Icon, {
     name: "Printer",
     size: 17
-  })))), /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-sm text-slate-500 flex items-center gap-1"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "CalendarDays",
-    size: 14
-  }), short(ev.start), " ~ ", short(ev.end), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400"
-  }, "\xB7 ", /*#__PURE__*/React.createElement("b", {
-    className: "font-bold text-slate-800"
-  }, n === 0 ? "당일" : `${n}박 ${n + 1}일`))), (ev.leaderName || ev.leaderPhone) && /*#__PURE__*/React.createElement("p", {
-    className: "mt-1 text-sm flex items-center gap-1.5 flex-wrap"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "User",
-    size: 14
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uD589\uC0AC \uB300\uD45C\uC790"), ev.leaderName && /*#__PURE__*/React.createElement("span", {
-    className: "font-semibold text-slate-800"
-  }, ev.leaderName), ev.leaderPhone && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${ev.leaderPhone}`,
-    onClick: e => e.stopPropagation(),
-    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Phone",
-    size: 12
-  }), ev.leaderPhone)), /*#__PURE__*/React.createElement("div", {
-    className: "mt-3 grid grid-cols-1 gap-1.5 text-sm text-slate-700"
-  }, /*#__PURE__*/React.createElement(Row, {
-    icon: "Users"
-  }, "\uC131\uC778 ", ev.adult || 0, +ev.child ? ` · 아동 ${ev.child}` : "", +ev.infant ? ` · 유아 ${ev.infant}` : "", " ", /*#__PURE__*/React.createElement("b", {
-    className: "text-slate-900"
-  }, "/ \uCD1D ", total(ev), "\uBA85")), (ev.flightNo || ev.arriveTime || ev.outFlightNo || ev.outTime) && /*#__PURE__*/React.createElement(Row, {
-    icon: "Plane"
-  }, (ev.flightNo || ev.arriveTime) && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uB3C4\uCC29 "), ev.flightNo && /*#__PURE__*/React.createElement("b", {
+  })))), /*#__PURE__*/React.createElement("div", {
+    className: "mt-3 border-t border-slate-200"
+  }, /*#__PURE__*/React.createElement(NoteRow, {
+    label: "기간"
+  }, short(ev.start), " ~ ", short(ev.end), " ", /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.flightNo, " "), ev.arriveTime), (ev.flightNo || ev.arriveTime) && (ev.outFlightNo || ev.outTime) ? " · " : "", (ev.outFlightNo || ev.outTime) && /*#__PURE__*/React.createElement("span", null, /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uC544\uC6C3 "), ev.outFlightNo && /*#__PURE__*/React.createElement("b", {
+  }, "(", n === 0 ? "당일" : `${n}박 ${n + 1}일`, ")")), (ev.leaderName || ev.leaderPhone) && /*#__PURE__*/React.createElement(NoteRow, {
+    label: "행사 대표자"
+  }, ev.leaderName && /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.outFlightNo, " "), ev.outTime)), /*#__PURE__*/React.createElement(Row, {
-    icon: "BedDouble"
+  }, ev.leaderName), /*#__PURE__*/React.createElement(Tel, {
+    p: ev.leaderPhone
+  })), /*#__PURE__*/React.createElement(NoteRow, {
+    label: "인원"
+  }, "성인 ", ev.adult || 0, +ev.child ? ` · 아동 ${ev.child}` : "", +ev.infant ? ` · 유아 ${ev.infant}` : "", " ", /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, "/ 총 ", total(ev), "명")), (ev.flightNo || ev.arriveTime || ev.outFlightNo || ev.outTime) && /*#__PURE__*/React.createElement(NoteRow, {
+    label: "항공",
+    lines: [(ev.flightNo || ev.arriveTime) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500"
+  }, "도착 "), ev.flightNo && /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, ev.flightNo, " "), ev.arriveTime), (ev.outFlightNo || ev.outTime) && /*#__PURE__*/React.createElement(React.Fragment, null, /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-500"
+  }, "아웃 "), ev.outFlightNo && /*#__PURE__*/React.createElement("b", {
+    className: "font-bold text-slate-900"
+  }, ev.outFlightNo, " "), ev.outTime)]
+  }), /*#__PURE__*/React.createElement(NoteRow, {
+    label: "숙소"
   }, ev.hotelName ? /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.hotelName) : "숙소 미정", +ev.rooms ? ` ${ev.rooms}객실` : "", ev.occupancy && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, " \xB7 ", ev.occupancy), ev.roomType && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, " \xB7 ", ev.roomType)), /*#__PURE__*/React.createElement(Row, {
-    icon: "Flag"
-  }, allGuides(ev).length ? allGuides(ev).map((g, i) => /*#__PURE__*/React.createElement("span", {
-    key: i,
-    style: { display: "block" }
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC\uB2D8 "), g.n && /*#__PURE__*/React.createElement("b", {
+  }, ev.hotelName) : /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "미정"), [+ev.rooms ? `${ev.rooms}객실` : "", ev.occupancy, ev.roomType].filter(Boolean).map(t => ` · ${t}`).join("")), /*#__PURE__*/React.createElement(NoteRow, {
+    label: "가이드님",
+    lines: allGuides(ev).length ? allGuides(ev).map(g => /*#__PURE__*/React.createElement(React.Fragment, null, g.n && /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, g.n), g.p && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${g.p}`,
-    onClick: e => e.stopPropagation(),
-    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold",
-    style: { marginLeft: 6 }
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Phone",
-    size: 12
-  }), g.p))) : /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\uAC00\uC774\uB4DC\uB2D8 \uC5C6\uC74C")), /*#__PURE__*/React.createElement("div", {
-    className: "flex items-start gap-2 min-w-0"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-400 shrink-0 mt-0.5"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Bus",
-    size: 15
-  })), /*#__PURE__*/React.createElement("span", {
-    className: "min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5"
-  }, /*#__PURE__*/React.createElement("span", null, ev.vehicleType || "차량 미정", ev.vehicleType && +ev.vehicleCount ? ` ${ev.vehicleCount}대` : ""), ev.carCompany && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\xB7 ", ev.carCompany), ev.plate && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\xB7 ", ev.plate), ev.driverName && /*#__PURE__*/React.createElement("span", {
-    className: "text-slate-500"
-  }, "\xB7 \uAE30\uC0AC\uB2D8 ", /*#__PURE__*/React.createElement("b", {
+  }, g.n), /*#__PURE__*/React.createElement(Tel, {
+    p: g.p
+  }))) : [/*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "없음")]
+  }), /*#__PURE__*/React.createElement(NoteRow, {
+    label: "차량"
+  }, ev.vehicleType ? /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, ev.driverName)), ev.driverPhone && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${ev.driverPhone}`,
-    onClick: e => e.stopPropagation(),
-    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Phone",
-    size: 12
-  }), ev.driverPhone))), extraCars(ev).map((c, i) => /*#__PURE__*/React.createElement("div", {
-    key: i,
-    className: "flex items-start gap-2 min-w-0"
-  }, /*#__PURE__*/React.createElement("span", {
-    className: "shrink-0",
-    style: { width: 15 }
-  }), /*#__PURE__*/React.createElement("span", {
-    className: "min-w-0 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-slate-500"
-  }, /*#__PURE__*/React.createElement("span", null, `차량 ${i + 2}`), c.co && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.co), c.pl && /*#__PURE__*/React.createElement("span", null, "\xB7 ", c.pl), c.dn && /*#__PURE__*/React.createElement("span", null, "\xB7 \uAE30\uC0AC\uB2D8 ", /*#__PURE__*/React.createElement("b", {
+  }, ev.vehicleType, +ev.vehicleCount ? ` ${ev.vehicleCount}대` : "") : /*#__PURE__*/React.createElement("span", {
+    className: "text-slate-400"
+  }, "미정")), (() => {
+    const cars = [{ co: ev.carCompany, pl: ev.plate, dn: ev.driverName, dp: ev.driverPhone }, ...extraCars(ev)].filter(c => ["co", "pl", "dn", "dp"].some(k => (c[k] || "").trim()));
+    return cars.length > 0 && /*#__PURE__*/React.createElement(NoteRow, {
+      label: "기사님",
+      lines: cars.map(c => /*#__PURE__*/React.createElement(React.Fragment, null, [c.co, c.pl].filter(Boolean).join(" · "), (c.co || c.pl) && (c.dn || c.dp) ? " · " : "", c.dn && /*#__PURE__*/React.createElement("b", {
     className: "font-bold text-slate-900"
-  }, c.dn)), c.dp && /*#__PURE__*/React.createElement("a", {
-    href: `tel:${c.dp}`,
-    onClick: e => e.stopPropagation(),
-    className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold"
-  }, /*#__PURE__*/React.createElement(Icon, {
-    name: "Phone",
-    size: 12
-  }), c.dp))))), mealLines(ev).length > 0 && /*#__PURE__*/React.createElement("div", {
+  }, c.dn), /*#__PURE__*/React.createElement(Tel, {
+    p: c.dp
+  })))
+    });
+  })()), mealLines(ev).length > 0 && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-slate-700 flex items-center gap-1 mb-1"
+    className: "text-xs font-semibold text-emerald-700 flex items-center gap-1 mb-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "rounded-full",
     style: { width: 4, height: 4, display: "inline-block", background: "currentColor" }
@@ -1094,16 +1041,16 @@ function EventCard({
     key: x.l,
     className: "flex gap-2"
   }, /*#__PURE__*/React.createElement("span", {
-    className: "shrink-0 text-slate-500"
+    className: x.none ? "shrink-0 text-slate-500" : "shrink-0 font-semibold text-slate-700"
   }, x.l), /*#__PURE__*/React.createElement("span", {
-    className: x.none ? "min-w-0 text-slate-400" : "min-w-0",
+    className: x.none ? "min-w-0 text-slate-400" : "min-w-0 font-bold text-slate-900",
     style: { wordBreak: "break-all" }
   }, x.t))))))), ev.memo && /*#__PURE__*/React.createElement("div", {
     className: "mt-3"
   }, /*#__PURE__*/React.createElement("div", {
     className: "flex items-center gap-2 mb-1"
   }, /*#__PURE__*/React.createElement("p", {
-    className: "text-xs font-bold text-slate-700 flex items-center gap-1"
+    className: "text-xs font-semibold text-emerald-700 flex items-center gap-1"
   }, /*#__PURE__*/React.createElement("span", {
     className: "rounded-full",
     style: { width: 4, height: 4, display: "inline-block", background: "currentColor" }
@@ -1130,6 +1077,41 @@ function EventCard({
     size: 18
   })))));
 }
+/* 노트처럼: 왼쪽 항목명, 오른쪽 내용, 줄마다 밑줄 */
+/* 여러 줄(lines)일 때는 줄 사이 선을 내용 쪽에만 긋기 */
+const NoteRow = ({
+  label,
+  lines,
+  children
+}) => {
+  const L = (lines || [children]).filter(Boolean);
+  return /*#__PURE__*/React.createElement("div", {
+    className: "text-sm text-slate-700",
+    style: { display: "grid", gridTemplateColumns: "76px 1fr", gap: 8, padding: "0 2px", borderBottom: "1px solid rgb(var(--slate-200))" }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "text-xs font-semibold text-emerald-700 flex items-center gap-1",
+    style: { paddingTop: 8, alignSelf: "start" }
+  }, /*#__PURE__*/React.createElement("span", {
+    className: "rounded-full shrink-0",
+    style: { width: 4, height: 4, display: "inline-block", background: "currentColor" }
+  }), label), /*#__PURE__*/React.createElement("div", {
+    className: "min-w-0"
+  }, L.map((x, i) => /*#__PURE__*/React.createElement("div", {
+    key: i,
+    style: { padding: "7px 0", borderTop: i ? "1px solid rgb(var(--slate-200))" : "none", wordBreak: "keep-all", overflowWrap: "anywhere" }
+  }, x))));
+};
+const Tel = ({
+  p
+}) => p ? /*#__PURE__*/React.createElement("a", {
+  href: `tel:${p}`,
+  onClick: e => e.stopPropagation(),
+  className: "inline-flex items-center gap-0.5 text-blue-600 font-semibold",
+  style: { marginLeft: 6 }
+}, /*#__PURE__*/React.createElement(Icon, {
+  name: "Phone",
+  size: 12
+}), p) : null;
 const Row = ({
   icon,
   children
