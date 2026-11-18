@@ -504,6 +504,126 @@ const mealLines = ev => {
     items: MEALS.map(([k, l]) => ({ l, t: txt(i, k) || "없음", none: !txt(i, k) }))
   }));
 };
+/* 예전에 입력한 값 목록 (최근 순): 입력칸을 누르면 고를 수 있게 */
+const HIST_KEYS = {
+  hotel: e => [e.hotelName],
+  mgr: e => [e.hotelMgr],
+  room: e => [e.roomType],
+  guide: e => [e.guideName, ...(e.guides || []).map(g => g.n)],
+  vtype: e => [e.vehicleType],
+  driver: e => [e.driverName, ...(e.cars || []).map(c => c.dn)],
+  carco: e => [e.carCompany, ...(e.cars || []).map(c => c.co)],
+  plate: e => [e.plate, ...(e.cars || []).map(c => c.pl)],
+  meal: e => (e.meals || []).flatMap(d => ["b", "l", "d"].map(k => d && d[k] && d[k].n)),
+  menu: e => (e.meals || []).flatMap(d => ["b", "l", "d"].map(k => d && d[k] && d[k].m)),
+  agency: e => [e.agency],
+  rooms: e => [+e.rooms ? String(e.rooms) : ""]
+};
+/* 전화번호 칸: 이름·번호를 함께 (고르면 이름 칸도 채움) */
+const PAIR_KEYS = {
+  "p-agency": e => [[e.agency, e.agencyPhone]],
+  "p-leader": e => [[e.leaderName, e.leaderPhone]],
+  "p-guide": e => [[e.guideName, e.guidePhone], ...(e.guides || []).map(g => [g.n, g.p])],
+  "p-driver": e => [[e.driverName, e.driverPhone], ...(e.cars || []).map(c => [c.dn, c.dp])],
+  "p-mgr": e => [[e.hotelMgr, e.hotelMgrPhone]]
+};
+const recentHistory = (events, hidden = {}) => {
+  const sorted = events.slice().sort((a, b) => (b.savedAt || 0) - (a.savedAt || 0) || (b.start || "").localeCompare(a.start || ""));
+  const out = {};
+  for (const [k, get] of Object.entries(HIST_KEYS)) {
+    const hide = new Set(hidden[k] || []);
+    const seen = new Set();
+    out[k] = [];
+    for (const e of sorted) for (const v of get(e)) {
+      const t = String(v || "").trim();
+      if (t && !seen.has(t) && !hide.has(t)) { seen.add(t); out[k].push({ v: t, label: t }); }
+    }
+    out[k] = out[k].slice(0, 40);
+  }
+  for (const [k, get] of Object.entries(PAIR_KEYS)) {
+    const hide = new Set(hidden[k] || []);
+    const seen = new Set();
+    out[k] = [];
+    for (const e of sorted) for (const [n0, p0] of get(e)) {
+      const n = String(n0 || "").trim(), ph = String(p0 || "").trim();
+      const id = `${n}|${ph}`;
+      if (ph && !seen.has(id) && !hide.has(id)) { seen.add(id); out[k].push({ v: id, n, p: ph, label: n ? `${n} · ${ph}` : ph }); }
+    }
+    out[k] = out[k].slice(0, 40);
+  }
+  out.vtype = [...out.vtype, ...VEHICLES.filter(x => !out.vtype.some(o => o.v === x) && !(hidden.vtype || []).includes(x)).map(x => ({ v: x, label: x }))];
+  return out;
+};
+/* 목록에서 지운 항목: hidden.json 에 저장 (관리자 공통, 일정 내용은 그대로) */
+async function loadHidden(admin) {
+  const f = await ghGet("hidden.json", admin.token);
+  if (!f) return { map: {}, sha: null };
+  let map = {};
+  try { map = isLocked(f.data) ? await unseal(f.data, admin.pin) : f.data || {}; } catch (e) { map = {}; }
+  return { map, sha: f.sha };
+}
+async function commitHidden(admin, k, v) {
+  for (let i = 0; i < 3; i++) {
+    const { map, sha } = await loadHidden(admin);
+    const next = { ...map, [k]: [...new Set([...(map[k] || []), v])] };
+    try {
+      await ghPut("hidden.json", await seal(next, admin.pin), sha, admin.token);
+      return next;
+    } catch (e) {
+      if (e.status === 409 || e.status === 422) continue;
+      throw e;
+    }
+  }
+  throw new Error("저장에 실패했습니다. 다시 시도해 주세요");
+}
+const HistCtx = React.createContext({ hist: {}, hide: () => {} });
+/* 누르면 예전 기록이 최근 순으로 뜨는 입력칸 (✕로 목록에서 지우기) */
+function HInput({
+  hk,
+  onPick,
+  ...props
+}) {
+  const { hist, hide } = React.useContext(HistCtx);
+  const [open, setOpen] = useState(false);
+  const q = String(props.value || "").trim().toLowerCase();
+  const all = hist[hk] || [];
+  const items = all.filter(o => !q || o.label.toLowerCase().includes(q) && o.label.toLowerCase() !== q);
+  const pick = o => {
+    if (onPick) onPick(o);else props.onChange({ target: { value: o.v } });
+    setOpen(false);
+  };
+  return /*#__PURE__*/React.createElement("div", {
+    style: { position: "relative" }
+  }, /*#__PURE__*/React.createElement("input", _extends({}, props, {
+    autoComplete: "off",
+    onFocus: () => setOpen(true),
+    onBlur: () => setTimeout(() => setOpen(false), 150),
+    onChange: e => { props.onChange(e); setOpen(true); }
+  })), open && items.length > 0 && /*#__PURE__*/React.createElement("div", {
+    className: "bg-white rounded-xl ring-1 ring-slate-200 shadow-lg",
+    style: { position: "absolute", left: 0, right: 0, top: "calc(100% + 4px)", zIndex: 40, maxHeight: 240, overflowY: "auto" },
+    onMouseDown: e => e.preventDefault()
+  }, items.map(o => /*#__PURE__*/React.createElement("div", {
+    key: o.v,
+    className: "flex items-center",
+    style: { borderBottom: "1px solid rgb(var(--slate-100))" }
+  }, /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => pick(o),
+    className: "flex-1 min-w-0 text-left text-sm text-slate-800 active:bg-slate-100 truncate",
+    style: { padding: "10px 12px" }
+  }, o.label), /*#__PURE__*/React.createElement("button", {
+    type: "button",
+    onClick: () => hide(hk, o.v),
+    className: "shrink-0 flex items-center justify-center text-slate-400 active:bg-slate-100",
+    style: { width: 40, height: 40 },
+    "aria-label": `${o.label} 목록에서 지우기`,
+    title: "목록에서 지우기"
+  }, /*#__PURE__*/React.createElement(Icon, {
+    name: "X",
+    size: 15
+  }))))));
+}
 /* 가이드 여러 명: 첫 번째는 guideName/guidePhone, 추가 가이드는 guides 배열 */
 /* 차량 여러 대: 첫 번째는 기존 칸, 추가 차량은 cars 배열 (co 회사, pl 번호, dn 기사, dp 기사 연락처) */
 const extraCars = ev => (ev.cars || []).filter(c => ["co", "pl", "dn", "dp"].some(k => (c[k] || "").trim()));
@@ -513,7 +633,7 @@ const TODAY = fmt(new Date());
 
 /* ---------- 자동 업데이트: 새 버전이 올라오면 휴대폰이 알아서 최신 화면으로 ----------
    ※ 수정할 때마다 APP_BUILD 값을 바꿔야 합니다 */
-const APP_BUILD = "2026-11-13-1610";
+const APP_BUILD = "2026-11-18-1915";
 (() => {
   const base = location.href.split("?")[0].split("#")[0];
   if (!/^https?:/.test(base)) return;
@@ -1558,6 +1678,8 @@ function EventForm({
   onClose,
   onDelete,
   agencies = [],
+  hist = {},
+  onHide = () => {},
   saving
 }) {
   const [f, setF] = useState(initial);
@@ -1579,11 +1701,14 @@ function EventForm({
     if (f.end < f.start) return setErr("종료일이 시작일보다 빠릅니다.");
     onSave({
       ...f,
+      savedAt: Date.now(),
       id: f.id || uid(),
       title: f.title.trim()
     });
   };
-  return /*#__PURE__*/React.createElement("div", {
+  return /*#__PURE__*/React.createElement(HistCtx.Provider, {
+    value: { hist, hide: onHide }
+  }, /*#__PURE__*/React.createElement("div", {
     className: "fixed inset-0 z-50 flex items-end sm:items-center justify-center"
   }, /*#__PURE__*/React.createElement("div", {
     className: "absolute inset-0 bg-black/50 backdrop-blur-[2px]"
@@ -1632,15 +1757,17 @@ function EventForm({
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uAC70\uB798 \uC5EC\uD589\uC0AC"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "agency",
     className: inp,
     value: f.agency || "",
     onChange: e => set("agency", e.target.value),
-    placeholder: "\uC608: \u25CB\u25CB\uD22C\uC5B4",
-    list: "agencies"
+    placeholder: "\uC608: \u25CB\u25CB\uD22C\uC5B4"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uB2F4\uB2F9\uC790 \uC5F0\uB77D\uCC98"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-agency",
+    onPick: o => { set("agencyPhone", o.p); if (o.n) set("agency", o.n); },
     type: "tel",
     inputMode: "tel",
     className: inp,
@@ -1658,7 +1785,9 @@ function EventForm({
     placeholder: "\uC131\uBA85"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uB300\uD45C\uC790 \uC5F0\uB77D\uCC98"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-leader",
+    onPick: o => { set("leaderPhone", o.p); if (o.n) set("leaderName", o.n); },
     type: "tel",
     inputMode: "tel",
     className: inp,
@@ -1763,7 +1892,8 @@ function EventForm({
     className: "grid grid-cols-[1fr_96px] gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uC219\uC18C\uBA85"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "hotel",
     className: inp,
     value: f.hotelName,
     onChange: e => set("hotelName", e.target.value),
@@ -1783,14 +1913,17 @@ function EventForm({
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "담당 지배인님"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "mgr",
     className: inp,
     value: f.hotelMgr || "",
     onChange: e => set("hotelMgr", e.target.value),
     placeholder: "\uC131\uBA85"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "지배인님 연락처"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-mgr",
+    onPick: o => { set("hotelMgrPhone", o.p); if (o.n) set("hotelMgr", o.n); },
     type: "tel",
     inputMode: "tel",
     className: inp,
@@ -1801,14 +1934,16 @@ function EventForm({
     className: "grid grid-cols-[1fr_96px] gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uBC29 \uD0C0\uC785"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "room",
     className: inp,
     value: f.roomType,
     onChange: e => set("roomType", e.target.value),
     placeholder: "\uC608: \uB514\uB7ED\uC2A4 \uD2B8\uC708"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uAC1D\uC2E4 \uC218"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "rooms",
     type: "number",
     inputMode: "numeric",
     min: "0",
@@ -1832,13 +1967,16 @@ function EventForm({
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uAC00\uC774\uB4DC\uB2D8 \uC131\uBA85"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "guide",
     className: inp,
     value: f.guideName || "",
     onChange: e => set("guideName", e.target.value), placeholder: "\uC131\uBA85"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uAC00\uC774\uB4DC\uB2D8 \uC5F0\uB77D\uCC98"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-guide",
+    onPick: o => { set("guidePhone", o.p); if (o.n) set("guideName", o.n); },
     type: "tel",
     inputMode: "tel",
     className: inp,
@@ -1863,13 +2001,16 @@ function EventForm({
       size: 13
     }), "\uC0AD\uC81C")), /*#__PURE__*/React.createElement("div", {
       className: "grid grid-cols-2 gap-2"
-    }, /*#__PURE__*/React.createElement("input", {
+    }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "guide",
       className: inp,
       value: g.n || "",
       onChange: e => upd("n", e.target.value),
       placeholder: "\uC131\uBA85",
       "aria-label": `가이드님 ${i + 2} 성명`
-    }), /*#__PURE__*/React.createElement("input", {
+    }), /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-guide",
+    onPick: o => set("guides", f.guides.map((x, j) => j === i ? { ...x, p: o.p, n: o.n || x.n } : x)),
       type: "tel",
       inputMode: "tel",
       className: inp,
@@ -1884,7 +2025,8 @@ function EventForm({
     className: "grid grid-cols-[1fr_96px] gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uCC28\uB7C9 \uC885\uB958"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "vtype",
     className: inp,
     value: f.vehicleType,
     onChange: e => set("vehicleType", e.target.value),
@@ -1933,14 +2075,17 @@ function EventForm({
     className: "grid grid-cols-2 gap-2"
   }, /*#__PURE__*/React.createElement(Field, {
     label: "\uAE30\uC0AC\uB2D8 \uC131\uBA85"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "driver",
     className: inp,
     value: f.driverName || "",
     onChange: e => set("driverName", e.target.value),
     placeholder: "\uC131\uBA85"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uAE30\uC0AC\uB2D8 \uC5F0\uB77D\uCC98"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "p-driver",
+    onPick: o => { set("driverPhone", o.p); if (o.n) set("driverName", o.n); },
     type: "tel",
     inputMode: "tel",
     className: inp,
@@ -1949,21 +2094,25 @@ function EventForm({
     placeholder: "010-0000-0000"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uCC28\uB7C9\uD68C\uC0AC"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "carco",
     className: inp,
     value: f.carCompany || "",
     onChange: e => set("carCompany", e.target.value),
     placeholder: "\uC608: \uC778\uC131\uACE0\uC18D"
   })), /*#__PURE__*/React.createElement(Field, {
     label: "\uCC28\uB7C9 \uBC88\uD638"
-  }, /*#__PURE__*/React.createElement("input", {
+  }, /*#__PURE__*/React.createElement(HInput, {
+    hk: "plate",
     className: inp,
     value: f.plate,
     onChange: e => set("plate", e.target.value),
     placeholder: "\uC81C\uC8FC 70\uBC14 1234"
   }))), (f.cars || []).map((c, i) => {
     const upd = (k, v) => set("cars", f.cars.map((x, j) => j === i ? { ...x, [k]: v } : x));
-    const box = (k, ph, lab, tel) => /*#__PURE__*/React.createElement("input", {
+    const box = (k, ph, lab, tel) => /*#__PURE__*/React.createElement(HInput, {
+      hk: { dn: "driver", co: "carco", pl: "plate", dp: "p-driver" }[k],
+      ...(k === "dp" ? { onPick: o => set("cars", f.cars.map((x, j) => j === i ? { ...x, dp: o.p, dn: o.n || x.dn } : x)) } : {}),
       className: inp,
       value: c[k] || "",
       onChange: e => upd(k, e.target.value),
@@ -2016,13 +2165,15 @@ function EventForm({
       style: { display: "grid", gridTemplateColumns: "34px 1fr 1.3fr", gap: 6, alignItems: "center" }
     }, /*#__PURE__*/React.createElement("span", {
       className: "text-sm font-semibold text-slate-600"
-    }, l), /*#__PURE__*/React.createElement("input", {
+    }, l), /*#__PURE__*/React.createElement(HInput, {
+    hk: "meal",
       className: inp,
       value: x.n || "",
       onChange: e => setMeal("n", e.target.value),
       placeholder: "\uC2DD\uB2F9\uBA85",
       "aria-label": `${i + 1}일차 ${l} 식당명`
-    }), /*#__PURE__*/React.createElement("input", {
+    }), /*#__PURE__*/React.createElement(HInput, {
+    hk: "menu",
       className: inp,
       value: x.m || "",
       onChange: e => setMeal("m", e.target.value),
@@ -2051,7 +2202,7 @@ function EventForm({
     type: "submit",
     disabled: saving,
     className: "flex-1 h-12 rounded-xl bg-blue-600 text-white font-bold active:scale-[.99] disabled:opacity-60"
-  }, saving ? "저장 중…" : isEdit ? "수정 저장" : "등록하기")))));
+  }, saving ? "저장 중…" : isEdit ? "수정 저장" : "등록하기"))))));
 }
 const inp = "w-full h-11 px-3 rounded-xl bg-white ring-1 ring-slate-200 focus:ring-2 focus:ring-blue-500 outline-none text-slate-900 placeholder:text-slate-400";
 const Group = ({
@@ -2350,6 +2501,20 @@ function App() {
   const startCnt = live.filter(e => e.start === TODAY).length;
   const ongoingCnt = live.filter(e => inDay(e, TODAY)).length;
   const outCnt = live.filter(e => (e.end || e.start) === TODAY).length;
+  /* 입력칸 목록에서 지운 항목 (관리자 공통) */
+  const [hidden, setHidden] = useState({});
+  useEffect(() => {
+    if (!admin || !editing) return;
+    loadHidden(admin).then(r => setHidden(r.map)).catch(() => {});
+  }, [admin, !!editing]);
+  const hideHist = async (k, v) => {
+    setHidden(m => ({ ...m, [k]: [...(m[k] || []), v] }));
+    try {
+      setHidden(await commitHidden(admin, k, v));
+    } catch (e) {
+      alert("목록에서 지우지 못했습니다: " + netMsg(e));
+    }
+  };
   const save = async ev => {
     const isNew = !events.some(x => x.id === ev.id);
     const ok = await runCommit(list => list.some(x => x.id === ev.id) ? list.map(x => x.id === ev.id ? ev : x) : [...list, ev], isNew ? "등록되었습니다" : "수정되었습니다");
@@ -2567,7 +2732,9 @@ function App() {
     onSave: save,
     onClose: () => setEditing(null),
     onDelete: del,
-    agencies: [...new Set(events.map(e => (e.agency || "").trim()).filter(Boolean))]
+    agencies: [...new Set(events.map(e => (e.agency || "").trim()).filter(Boolean))],
+    hist: recentHistory(events, hidden),
+    onHide: hideHist
   }));
 }
 /* ---------- 잠금 화면 (직원 4자리 비밀번호) ---------- */
